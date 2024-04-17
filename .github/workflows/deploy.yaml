@@ -1,0 +1,60 @@
+name: Build, Tag and Deploy API Gateway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITAL_OCEAN_CONTAINER }}
+
+      - name: Build Docker Image
+        run: docker build --no-cache  -t coop-admin .
+      
+      - name: Tag Docker Image
+        run: docker tag coop-admin registry.digitalocean.com/sudaman/coop-admin:latest
+      
+      - name: Login in to DO Container Registry
+        run : doctl registry login --expiry-seconds 600
+
+      - name: Push Docker Image
+        run: docker push registry.digitalocean.com/sudaman/coop-admin:latest
+      
+      - name: Update deployment file
+        run: sed -i 's|<IMAGE>|registry.digitalocean.com/sudaman/coop-admin:latest|' $GITHUB_WORKSPACE/config/deployment.yaml
+      
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.DIGITAL_OCEAN_KUBE_CLUSTER_NAME }}
+      
+      - name: Deploy gateway to DigitalOcean Kubernetes cluster
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/deployment.yaml
+      
+      - name: Redeploy deployment
+        # We need this because the image is tagged wth latest and the deployment will not detect a change
+        run: kubectl rollout restart deployment/coop-admin
+        
+      - name: Rollout status
+        run: kubectl rollout status deployment/coop-admin
+  

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coop-admin
+  labels:
+    app: coop-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coop-admin
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: coop-admin
+    spec:
+      containers:
+      - name: coop-admin
+        image: <IMAGE>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: coop-admin-service
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  selector:
+    app: coop-admin
