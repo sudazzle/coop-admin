@@ -7,5 +7,6 @@ export const getAuthenticatedHeader = (token: string) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    withCredentials: process.env.NODE_ENV === 'production' ? true : false
   };
 }
