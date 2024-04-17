@@ -8,7 +8,6 @@ import {
   MenuList,
   MenuItem,
   IconButton,
-  useDisclosure
 } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 
