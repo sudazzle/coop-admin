@@ -43,7 +43,9 @@ jobs:
         run: docker push registry.digitalocean.com/sudaman/coop-admin:latest
       
       - name: Update deployment file
-        run: sed -i 's|<IMAGE>|registry.digitalocean.com/sudaman/coop-admin:latest|' $GITHUB_WORKSPACE/config/deployment.yaml
+        run: |
+          sed -i 's|<IMAGE>|registry.digitalocean.com/sudaman/coop-admin:latest|' $GITHUB_WORKSPACE/config/deployment.yaml
+          sed -i 's|<CERTIFICATE_ID>|${{ secrets.SSL_CERTIFICATE }}|' $GITHUB_WORKSPACE/config/deployment.yaml
       
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.DIGITAL_OCEAN_KUBE_CLUSTER_NAME }}
